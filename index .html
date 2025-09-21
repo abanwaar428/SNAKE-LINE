@@ -1,0 +1,184 @@
+<body>
+<!-- Intro Screen -->
+<div id="intro" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;z-index:9999">
+  <h1 style="font-size:40px;color:lime">✨ A_B_ANWAAR Studios ✨</h1>
+  <p style="margin:10px 0 20px;font-size:18px">Presenting Snake Game</p>
+  <button onclick="hideIntro()" style="padding:10px 20px;font-size:18px;cursor:pointer;background:lime;color:#000;border:none;border-radius:6px">Start Game</button>
+</div>
+
+<!-- Original Game -->
+<div class="card" id="gameWrapper" style="display:none">
+  <!-- tumhari puri snake game wali coding yahan jaisi ki waisi hi -->
+</div>
+
+<script>
+  function hideIntro(){
+    document.getElementById("intro").style.display="none";
+    document.getElementById("gameWrapper").style.display="block";
+  }
+</script>
+</body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SNAKE GAME -- creat by A_B_ANWAAR (Play Button)</title>
+<style>
+  :root{--bg:#071026;--text:#e6eef8;--accent:#10b981}
+  html,body{height:100%;margin:0;font-family:system-ui,Arial}
+  body{display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#001018,#071033);color:var(--text)}
+  .card{width:900px;max-width:96vw;padding:16px;border-radius:10px;background:rgba(255,255,255,0.02)}
+  header{display:flex;justify-content:space-between;align-items:center}
+  .controls{display:flex;gap:8px;align-items:center}
+  button{background:#0b1220;color:var(--text);border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;cursor:pointer}
+  canvas{display:block;margin-top:12px;border-radius:8px;background:linear-gradient(180deg,#07182a,#03253a)}
+  .level{padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.02);cursor:pointer}
+  .level.active{background:rgba(255,255,255,0.05)}
+  .meta{font-size:13px;color:#bcd7ea}
+
+  /* 🎮 Mobile D-Pad Buttons */
+  #controls {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  #controls .row {
+    display: flex;
+    gap: 20px;
+  }
+  #controls button {
+    width: 70px;
+    height: 70px;
+    font-size: 28px;
+    border: none;
+    border-radius: 12px;
+    background: #ff4444;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <header>
+    <div>
+      <h2 style="margin:0">SNAKE GAME-- creat by A_B_ANWAAR</h2>
+      <div class="meta">High Score: <span id="best2">0</span></div>
+    </div>
+    <div class="controls">
+      <div>
+        <span class="level active" data-speed="140">Easy</span>
+        <span class="level" data-speed="100">Medium</span>
+        <span class="level" data-speed="70">Hard</span>
+      </div>
+      <div style="margin-left:12px">
+        <button id="playMusic">Play Music</button>
+        <button id="start2">Start</button>
+        <button id="pause2">Pause</button>
+        <button id="reset2">Restart</button>
+      </div>
+    </div>
+  </header>
+
+  <canvas id="game2" width="640" height="480"></canvas>
+
+  <!-- 🎮 Mobile Controls -->
+  <div id="controls">
+    <div class="row">
+      <button id="up">⬆️</button>
+    </div>
+    <div class="row">
+      <button id="left">⬅️</button>
+      <button id="down">⬇️</button>
+      <button id="right">➡️</button>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;margin-top:8px">
+    <div class="meta">Score: <strong id="score2">0</strong></div>
+    <div class="meta">made by JADRAN tech</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // Elements
+  const c = document.getElementById('game2'), ctx = c.getContext('2d');
+  const scoreEl = document.getElementById('score2'), bestEl = document.getElementById('best2');
+  const startBtn = document.getElementById('start2'), pauseBtn = document.getElementById('pause2'), resetBtn = document.getElementById('reset2');
+  const playMusicBtn = document.getElementById('playMusic'), levelEls = document.querySelectorAll('.level');
+
+  const tile=20, cols=Math.floor(c.width/tile), rows=Math.floor(c.height/tile);
+  let snake=[{x:Math.floor(cols/2),y:Math.floor(rows/2)}], dir={x:1,y:0}, food=null, score=0, running=false, timer=null, speed=140;
+  let best = parseInt(localStorage.getItem('snake_best2')||'0',10); bestEl.textContent = best;
+
+  // Audio simple
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx=null, musicTimer=null, muted=false;
+  function ensureAudio(){ if(!audioCtx) audioCtx=new AudioCtx(); }
+  function playNote(freq,dur=0.12,type='sine',gain=0.06){ const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type=type; o.frequency.value=freq; g.gain.value=gain; o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+dur); }
+  function startMusic(){
+    if(muted) return; ensureAudio(); if(musicTimer) return;
+    let idx=0; const freqs=[330,392,494,660];
+    musicTimer = setInterval(()=>{ const t=audioCtx.currentTime; playNote(freqs[idx%freqs.length],0.14,'sawtooth',0.05); idx++; }, 180);
+  }
+  function stopMusic(){ if(musicTimer){ clearInterval(musicTimer); musicTimer=null; } }
+  function ding(){ if(muted) return; ensureAudio(); playNote(880,0.06,'square',0.09); }
+
+  // Game helpers
+  function randPos(){ return {x:Math.floor(Math.random()*cols), y:Math.floor(Math.random()*rows)};}
+  function placeFood(){ let p; do{ p=randPos(); } while(snake.some(s=>s.x===p.x&&s.y===p.y)); food=p; }
+  function resetGame(){ snake=[{x:Math.floor(cols/2),y:Math.floor(rows/2)}]; dir={x:1,y:0}; score=0; placeFood(); draw(); updateScore(); }
+  function updateScore(){ scoreEl.textContent=score; }
+
+  function startGame(){ if(running) return; running=true; if(!food) placeFood(); timer=setInterval(tick, speed); }
+  function pauseGame(){ running=false; clearInterval(timer); timer=null; }
+  function restart(){ pauseGame(); resetGame(); startGame(); }
+
+  function tick(){
+    const head={x:(snake[0].x+dir.x+cols)%cols, y:(snake[0].y+dir.y+rows)%rows};
+    if(snake.some((s,i)=>i>0 && s.x===head.x && s.y===head.y)){ pauseGame(); stopMusic(); if(score>best){best=score; localStorage.setItem('snake_best2',best); bestEl.textContent=best;} setTimeout(()=>alert('Game Over — Score: '+score),50); return; }
+    snake.unshift(head);
+    if(food && head.x===food.x && head.y===food.y){ score+=10; ding(); placeFood(); updateScore(); } else snake.pop();
+    draw();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    if(food){ ctx.fillStyle='#ef4444'; ctx.fillRect(food.x*tile+2, food.y*tile+2, tile-4, tile-4); }
+    for(let i=0;i<snake.length;i++){ const s=snake[i]; ctx.fillStyle = i===0 ? '#10b981' : '#34d399'; ctx.fillRect(s.x*tile+1, s.y*tile+1, tile-2, tile-2); ctx.strokeStyle='rgba(0,0,0,0.12)'; ctx.strokeRect(s.x*tile+1, s.y*tile+1, tile-2, tile-2); }
+  }
+
+  // Input (Keyboard)
+  window.addEventListener('keydown', e=>{
+    const k=e.key.toLowerCase();
+    if(k==='arrowup'||k==='w'){ if(dir.y!==1) dir={x:0,y:-1}; }
+    if(k==='arrowdown'||k==='s'){ if(dir.y!==-1) dir={x:0,y:1}; }
+    if(k==='arrowleft'||k==='a'){ if(dir.x!==1) dir={x:-1,y:0}; }
+    if(k==='arrowright'||k==='d'){ if(dir.x!==-1) dir={x:1,y:0}; }
+    if(k===' '){ if(running) pauseGame(); else startGame(); }
+  });
+
+  // 🎮 Input (Mobile Buttons)
+  document.getElementById("up").addEventListener("click", ()=>{ if(dir.y!==1) dir={x:0,y:-1}; });
+  document.getElementById("down").addEventListener("click", ()=>{ if(dir.y!==-1) dir={x:0,y:1}; });
+  document.getElementById("left").addEventListener("click", ()=>{ if(dir.x!==1) dir={x:-1,y:0}; });
+  document.getElementById("right").addEventListener("click", ()=>{ if(dir.x!==-1) dir={x:1,y:0}; });
+
+  // UI wiring
+  startBtn.addEventListener('click', startGame);
+  pauseBtn.addEventListener('click', ()=>{ if(running) pauseGame(); else startGame(); });
+  resetBtn.addEventListener('click', restart);
+  playMusicBtn.addEventListener('click', ()=>{ try{ startMusic(); playMusicBtn.textContent='Music On'; }catch(e){ alert('Interaction required — click Start or click page to allow audio.'); } });
+
+  levelEls.forEach(el=>el.addEventListener('click', ()=>{ levelEls.forEach(x=>x.classList.remove('active')); el.classList.add('active'); speed=parseInt(el.dataset.speed,10); if(running){ clearInterval(timer); timer=setInterval(tick,speed); } }));
+
+  // init
+  resetGame();
+})();
+</script>
+</body>
+</html>
